@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DQX コインボスアクセ検索</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18212a;
+      --muted: #65717d;
+      --line: #d9e1e8;
+      --paper: #fbfcfd;
+      --panel: #ffffff;
+      --blue: #2166a5;
+      --green: #27825f;
+      --gold: #b77b14;
+      --red: #b34242;
+      --shadow: 0 16px 38px rgba(22, 35, 48, .13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(255, 205, 112, .28), transparent 24rem),
+        linear-gradient(145deg, #eef7f6 0%, #f7f0df 42%, #eef3fa 100%);
+      letter-spacing: 0;
+    }
+
+    header {
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(24, 33, 42, .1);
+      background:
+        linear-gradient(90deg, rgba(20, 83, 128, .94), rgba(33, 102, 165, .78)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='360' viewBox='0 0 1200 360'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.22'%3E%3Cpath d='M0 250 C170 175 280 300 450 210 S740 120 930 205 1110 255 1200 190'/%3E%3Cpath d='M0 315 C205 235 355 350 560 260 S850 205 1200 285'/%3E%3Ccircle cx='105' cy='115' r='38'/%3E%3Ccircle cx='108' cy='115' r='22'/%3E%3Ccircle cx='1010' cy='92' r='34'/%3E%3Cpath d='M735 46 l44 18 17 45-19 43-45 17-43-18-18-45 19-43z'/%3E%3C/g%3E%3C/svg%3E");
+      color: white;
+    }
+
+    .hero {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 28px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 24px;
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1.05;
+      font-weight: 800;
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 740px;
+      color: rgba(255, 255, 255, .88);
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .stat {
+      display: grid;
+      gap: 8px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,.28);
+      background: rgba(255,255,255,.13);
+      backdrop-filter: blur(8px);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 22px auto 44px;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .filters, .card, .detail, dialog {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .filters {
+      align-self: start;
+      position: sticky;
+      top: 16px;
+      padding: 16px;
+    }
+
+    label, .label {
+      display: block;
+      margin: 0 0 8px;
+      color: #35414c;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #cbd6df;
+      background: #fff;
+      color: var(--ink);
+      padding: 9px 11px;
+      font: inherit;
+    }
+
+    input:focus, select:focus, button:focus-visible {
+      outline: 3px solid rgba(33, 102, 165, .25);
+      outline-offset: 2px;
+    }
+
+    .filter-group { margin-bottom: 14px; }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid #cbd6df;
+      background: #f7fafc;
+      color: #283541;
+      padding: 8px 10px;
+      min-height: 36px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .chip.active {
+      background: #e7f2fb;
+      border-color: var(--blue);
+      color: #0d4f8c;
+      font-weight: 700;
+    }
+
+    .reset {
+      width: 100%;
+      border: 0;
+      background: #243543;
+      color: #fff;
+      min-height: 42px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .toolbar p { margin: 0; color: var(--muted); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      padding: 14px;
+      min-height: 265px;
+    }
+
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 26px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 7px;
+      border: 1px solid #d8e0e7;
+      background: #f7fafc;
+      color: #43505c;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.latest { border-color: #f0c36b; background: #fff7e2; color: #7a510c; }
+    .pill.hard { border-color: #ebb3b3; background: #fff0f0; color: #913636; }
+    .pill.easy { border-color: #a8d9c8; background: #edf9f4; color: #1d6c50; }
+
+    .accessory {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+    }
+
+    .accessory dt {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .accessory dd {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #174e81;
+    }
+
+    .lineage-preview {
+      display: grid;
+      gap: 8px;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #dfe6ed;
+      background: #f8fbfd;
+    }
+
+    .lineage-title {
+      margin: 0;
+      color: #5b6874;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .lineage-chain {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .lineage-step {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 3px 8px;
+      border: 1px solid #cad6df;
+      background: #fff;
+      color: #40505d;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .lineage-step.current {
+      border-color: var(--gold);
+      background: #fff5da;
+      color: #7a510c;
+    }
+
+    .lineage-arrow {
+      color: #7b8792;
+      font-weight: 800;
+    }
+
+    .note {
+      margin: 0;
+      color: #4d5a66;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .roles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .card button.more {
+      border: 1px solid var(--blue);
+      background: var(--blue);
+      color: #fff;
+      min-height: 40px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 28px;
+      border: 1px dashed #bdc9d3;
+      background: rgba(255,255,255,.72);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    dialog {
+      width: min(760px, calc(100% - 28px));
+      padding: 0;
+      color: var(--ink);
+      max-height: calc(100vh - 28px);
+    }
+
+    dialog::backdrop { background: rgba(10, 20, 30, .48); }
+
+    .detail-head {
+      padding: 18px;
+      color: #fff;
+      background: linear-gradient(90deg, #1c557f, #27825f);
+      cursor: move;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .detail-head h3 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    .detail-body {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .detail-box {
+      border: 1px solid var(--line);
+      padding: 12px;
+      background: var(--paper);
+    }
+
+    .detail-box.full {
+      grid-column: 1 / -1;
+    }
+
+    .detail-box h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #384653;
+    }
+
+    .detail-box p, .detail-box ul {
+      margin: 0;
+      color: #46535f;
+      line-height: 1.7;
+    }
+
+    .detail-box ul {
+      padding-left: 20px;
+    }
+
+    .close {
+      border: 0;
+      background: #243543;
+      color: #fff;
+      min-height: 42px;
+      padding: 0 18px;
+      justify-self: end;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .sources {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .76);
+      color: #53606b;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .sources a { color: #155c9c; }
+
+    @media (max-width: 860px) {
+      .hero, main {
+        grid-template-columns: 1fr;
+      }
+
+      .filters {
+        position: static;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <div>
+        <h1>DQX コインボスアクセ検索</h1>
+        <p class="lead">コインボスから取れるアクセサリと、挑むときの職業・レベル目安をすばやく確認できます。最新寄りのボスほど装備耐性と構成が大事です。</p>
+      </div>
+      <div class="stat" aria-label="収録件数">
+        <span>収録ボス</span>
+        <strong id="totalCount">0</strong>
+        <span>コイン・召喚符・プチ系を整理</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <aside class="filters" aria-label="検索条件">
+      <div class="filter-group">
+        <label for="search">キーワード</label>
+        <input id="search" type="search" placeholder="例: タイム / 指輪 / 僧侶 / HP">
+      </div>
+
+      <div class="filter-group">
+        <label for="type">アクセ種別</label>
+        <select id="type">
+          <option value="">すべて</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="difficulty">挑戦目安</label>
+        <select id="difficulty">
+          <option value="">すべて</option>
+          <option value="最新級">最新級</option>
+          <option value="高め">高め</option>
+          <option value="標準">標準</option>
+          <option value="初級">初級</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <span class="label">職業ロール</span>
+        <div class="chips" id="roleChips"></div>
+      </div>
+
+      <button class="reset" id="reset">条件をクリア</button>
+    </aside>
+
+    <section>
+      <div class="toolbar">
+        <p id="resultCount">0件</p>
+        <p>更新目安: 2026-05-27</p>
+      </div>
+      <div class="grid" id="cards"></div>
+      <div class="sources">
+        データ確認: <a href="https://xn--10-yg4a1a3kyh.jp/dq10_id_boss_2.html" target="_blank" rel="noreferrer">ドラクエ10極限攻略 コインボス一覧</a>、
+        <a href="https://hiroba.dqx.jp/sc/topics/detail/c79ec57a8e72a87d8a69d2c6b8a2a8d4/" target="_blank" rel="noreferrer">公式 破壊神フォロボス告知</a>、
+        <a href="https://xn--10-yg4a1a3kyh.jp/dq10_boss_id111.html" target="_blank" rel="noreferrer">ヘルクラウダー攻略情報</a>。
+        レベル・職業目安は各攻略情報から実戦向けに要約したアプリ内ガイドです。
+      </div>
+    </section>
+  </main>
+
+  <dialog id="detailDialog">
+    <div class="detail-head">
+      <h3 id="detailTitle"></h3>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </dialog>
+
+  <script>
+    const bosses = [
+      { boss: "ヘルクラウダー", accessories: ["冥雲魔神の勲章"], type: "証", difficulty: "最新級", level: "Lv138-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "竜術士", "隠者", "僧侶", "旅芸人"], resists: ["眠り", "封印", "呪文耐性", "風耐性"], tips: "バージョン7.6後期級。眠り・封印対策を優先し、回復1枚以上と範囲火力で安定させる。", tags: ["最新", "勲章", "証", "夢幻魔王上位"] },
+      { boss: "破壊神フォロボス", accessories: ["破壊神の眼甲"], type: "顔", difficulty: "最新級", level: "Lv138-140", roles: ["火力", "回復", "補助"], jobs: ["魔法使い", "竜術士", "魔剣士", "天地雷鳴士", "隠者"], resists: ["呪文耐性", "呪い", "闇耐性"], tips: "呪文攻撃が重い。マジックバリアや呪文耐性装備があると立て直しやすい。", tags: ["最新", "眼甲", "顔", "機神上位"] },
+      { boss: "デスマシーン", accessories: ["デスマスク"], type: "顔", difficulty: "最新級", level: "Lv135-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "ガーディアン", "僧侶", "賢者", "旅芸人"], resists: ["マヒ", "転び", "呪文耐性"], tips: "連続攻撃と状態異常を想定。最新寄りなので耐性を整え、回復役は蘇生を厚めに。", tags: ["顔", "デスマスク"] },
+      { boss: "人食い火竜", accessories: ["赤竜の首かざり"], type: "首", difficulty: "最新級", level: "Lv130-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "ガーディアン", "僧侶", "賢者", "レンジャー"], resists: ["ブレス耐性", "炎耐性", "おびえ"], tips: "ブレスと炎対策が重要。レンジャーのまもりのきりやブレス耐性装備が有効。", tags: ["首", "竜"] },
+      { boss: "タイムマスター", accessories: ["軍神のゆびわ", "神智のゆびわ"], type: "指", difficulty: "高め", level: "Lv125-140", roles: ["火力", "回復", "補助"], jobs: ["旅芸人", "魔剣士", "バトルマスター", "僧侶", "賢者"], resists: ["呪文耐性", "眠り"], tips: "呪文対策と状態異常が鍵。前衛用の軍神、呪文・回復職向けの神智を狙える。", tags: ["指輪", "前衛", "後衛"] },
+      { boss: "結界の守護者たち", accessories: ["マーシャルピアス", "レメディピアス"], type: "耳", difficulty: "高め", level: "Lv125-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "ガーディアン", "僧侶", "旅芸人"], resists: ["呪文耐性", "ブレス耐性", "混乱"], tips: "複数体ボス。範囲攻撃と回復の厚さが大事で、耳アクセを2系統集められる。", tags: ["耳", "ピアス"] },
+      { boss: "究極エビルプリースト", accessories: ["ラストチョーカー"], type: "首", difficulty: "高め", level: "Lv120-140", roles: ["火力", "回復"], jobs: ["バトルマスター", "魔剣士", "ガーディアン", "僧侶", "賢者"], resists: ["呪文耐性", "炎耐性"], tips: "攻撃寄りの首アクセ狙い。火力を出しつつ範囲攻撃の被弾を減らす。", tags: ["首", "チョーカー", "攻撃"] },
+      { boss: "エビルプリースト", accessories: ["邪教司祭の勲章"], type: "証", difficulty: "高め", level: "Lv115-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "僧侶", "賢者", "旅芸人"], resists: ["呪文耐性", "転び"], tips: "勲章枠の更新候補。回復役を守りながら短期決戦を狙う。", tags: ["勲章", "証"] },
+      { boss: "アンドレアル", accessories: ["紫竜の煌玉"], type: "その他", difficulty: "高め", level: "Lv110-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "まもの使い", "天地雷鳴士", "僧侶", "旅芸人"], resists: ["毒", "ブレス耐性", "呪い"], tips: "HP系アクセの重要枠。毒とブレスを固めると周回しやすい。", tags: ["HP", "煌玉"] },
+      { boss: "真・幻界諸侯", accessories: ["幻界王の首かざり"], type: "首", difficulty: "高め", level: "Lv110-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "占い師", "僧侶", "旅芸人"], resists: ["呪い", "封印", "マヒ"], tips: "複数ボスを順に処理。状態異常耐性を広めに見ておくと安定。", tags: ["首", "耐性"] },
+      { boss: "ムドー", accessories: ["夢幻魔王の勲章"], type: "証", difficulty: "高め", level: "Lv110-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "旅芸人", "天地雷鳴士", "僧侶", "賢者"], resists: ["眠り", "おびえ", "呪文耐性"], tips: "眠り対策を忘れずに。勲章枠として今でも伝承元・育成対象になりやすい。", tags: ["勲章", "証"] },
+      { boss: "魔犬レオパルド", accessories: ["魔犬の仮面"], type: "顔", difficulty: "標準", level: "Lv105-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "レンジャー", "天地雷鳴士", "僧侶", "旅芸人"], resists: ["毒", "混乱", "ブレス耐性"], tips: "開幕効果用の顔アクセ。範囲を避けながら雑魚処理と回復を両立する。", tags: ["顔", "仮面"] },
+      { boss: "ドラゴン", accessories: ["竜のうろこ", "おうじょのあい"], type: "その他", difficulty: "標準", level: "Lv100-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "レンジャー", "僧侶", "旅芸人"], resists: ["ブレス耐性", "炎耐性"], tips: "被ダメージ軽減の定番アクセ。ブレス対策を整えるとサポでも周回しやすい。", tags: ["軽減", "竜"] },
+      { boss: "帝国三将軍", accessories: ["ガナン帝国の勲章"], type: "証", difficulty: "標準", level: "Lv100-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "占い師", "天地雷鳴士", "僧侶", "旅芸人"], resists: ["眠り", "封印", "幻惑"], tips: "複数体を寝かせたり隔離できると楽。勲章枠の基礎として優秀。", tags: ["勲章", "証"] },
+      { boss: "ゴレオン将軍", accessories: ["剛勇のベルト"], type: "腰", difficulty: "標準", level: "Lv95-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "ガーディアン", "僧侶", "旅芸人"], resists: ["幻惑", "おびえ"], tips: "重さ・HP系の腰アクセ。今は報酬緩和済みで集めやすい。", tags: ["腰", "HP", "重さ"] },
+      { boss: "ゲルニック将軍", accessories: ["智謀の首かざり"], type: "首", difficulty: "標準", level: "Lv95-140", roles: ["火力", "回復", "補助"], jobs: ["魔法使い", "天地雷鳴士", "賢者", "僧侶", "旅芸人"], resists: ["封印", "眠り", "呪文耐性"], tips: "属性呪文職向けの首アクセ。封印・眠り耐性を優先。", tags: ["首", "呪文", "属性"] },
+      { boss: "ギュメイ将軍", accessories: ["忠義の勲章"], type: "証", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "ガーディアン", "僧侶", "旅芸人"], resists: ["光耐性"], tips: "単体物理ボス。壁と回復を意識すれば今のレベル帯では戦いやすい。", tags: ["勲章", "証"] },
+      { boss: "死神スライダーク", accessories: ["死神のピアス"], type: "耳", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "賢者", "旅芸人"], resists: ["呪い", "即死"], tips: "範囲攻撃を避ける練習に向く。耳アクセの伝承元として使う。", tags: ["耳", "ピアス"] },
+      { boss: "スライムジェネラル", accessories: ["武刃将軍のゆびわ", "魔導将軍のゆびわ"], type: "指", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復", "補助"], jobs: ["バトルマスター", "魔剣士", "魔法使い", "僧侶", "旅芸人"], resists: ["光耐性"], tips: "前衛用・後衛用の指輪をまとめて狙える。呼ばれた敵は早めに処理。", tags: ["指輪", "バイシ", "早詠み"] },
+      { boss: "Sキラーマシン", accessories: ["機神の眼甲"], type: "顔", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人", "レンジャー"], resists: ["転び"], tips: "眼甲系の伝承元。ギミック処理が苦手なら高レベルで余裕を持つ。", tags: ["顔", "眼甲"] },
+      { boss: "暗黒の魔人", accessories: ["魔人の勲章"], type: "証", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復"], jobs: ["バトルマスター", "魔剣士", "僧侶", "賢者", "旅芸人"], resists: ["転び", "マヒ"], tips: "移動制限と範囲攻撃に注意。勲章系の古い伝承元。", tags: ["勲章", "証"] },
+      { boss: "ドン・モグーラ", accessories: ["大地の大竜玉"], type: "その他", difficulty: "初級", level: "Lv85-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "天地雷鳴士", "僧侶", "旅芸人"], resists: ["混乱", "転び", "幻惑"], tips: "HPアクセの基礎。今は高レベルならサポ周回向き。", tags: ["HP", "竜玉"] },
+      { boss: "幻界の四諸侯", accessories: ["幻界闘士のゆびわ", "幻界導師のゆびわ"], type: "指", difficulty: "初級", level: "Lv85-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人", "占い師"], resists: ["呪い", "混乱", "封印"], tips: "指輪系の伝承元。複数ボスなので倒す順番を意識。", tags: ["指輪"] },
+      { boss: "キラーマジンガ", accessories: ["アクセルギア"], type: "顔", difficulty: "初級", level: "Lv80-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["転び"], tips: "行動間隔短縮系アクセの基礎。強カードでなければ今はかなり挑みやすい。", tags: ["顔", "ターン"] },
+      { boss: "伝説の三悪魔", accessories: ["忠誠のチョーカー"], type: "首", difficulty: "初級", level: "Lv80-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人", "レンジャー"], resists: ["ブレス耐性", "踊り", "毒"], tips: "攻撃力首アクセの伝承元。ブレス耐性があると楽。", tags: ["首", "チョーカー", "攻撃"] },
+      { boss: "グラコス", accessories: ["海魔の眼甲"], type: "顔", difficulty: "初級", level: "Lv80-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["眠り", "踊り"], tips: "眼甲系の第一世代。古いボスなのでアクセ集めの入門に向く。", tags: ["顔", "眼甲"] },
+      { boss: "キングヒドラ", accessories: ["ハイドラベルト"], type: "腰", difficulty: "初級", level: "Lv75-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "レンジャー", "僧侶", "旅芸人"], resists: ["ブレス耐性", "踊り"], tips: "ブレス対策で安定。腰アクセの古い世代。", tags: ["腰", "重さ"] },
+      { boss: "バラモス", accessories: ["魔王のネックレス"], type: "首", difficulty: "初級", level: "Lv75-140", roles: ["火力", "回復"], jobs: ["魔法使い", "賢者", "魔剣士", "僧侶", "旅芸人"], resists: ["封印", "魅了", "転び"], tips: "呪文職向け首アクセの基礎。魅了と封印に注意。", tags: ["首", "呪文"] },
+      { boss: "ドラゴンガイア", accessories: ["大地の竜玉"], type: "その他", difficulty: "初級", level: "Lv70-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["ブレス耐性"], tips: "HPアクセの第一歩。初心者が最初に完成を狙いやすい。", tags: ["HP", "竜玉"] },
+      { boss: "悪霊の神々", accessories: ["悪霊の仮面"], type: "顔", difficulty: "初級", level: "Lv70-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "バトルマスター", "天地雷鳴士", "僧侶", "旅芸人"], resists: ["眠り", "即死", "封印"], tips: "開幕必殺系の古い顔アクセ。眠り管理で難度が下がる。", tags: ["顔", "仮面"] },
+      { boss: "ベリアル", accessories: ["銀のロザリオ"], type: "首", difficulty: "初級", level: "Lv60-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["ブレス耐性", "マヒ"], tips: "金のロザリオの伝承元。低レベル帯でも練習しやすい。", tags: ["首", "生存"] },
+      { boss: "バズズ", accessories: ["ソーサリーリング"], type: "指", difficulty: "初級", level: "Lv60-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["即死", "封印", "眠り"], tips: "MP回復指輪。耐性を揃えれば入門向け。", tags: ["指輪", "MP"] },
+      { boss: "アトラス", accessories: ["バトルチョーカー"], type: "首", difficulty: "初級", level: "Lv60-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["転び"], tips: "攻撃力首アクセの最初期。今はアクセ伝承用に短時間で集める対象。", tags: ["首", "チョーカー", "攻撃"] },
+      { boss: "牙王ゴースネル", accessories: ["金のロザリオ"], type: "首", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復", "補助"], jobs: ["魔剣士", "ガーディアン", "僧侶", "賢者", "天地雷鳴士"], resists: ["マヒ", "封印", "混乱", "呪い"], tips: "召喚符ボス。生存用の重要アクセなので、耐性を多めに整えて挑む。", tags: ["召喚符", "首", "生存"] },
+      { boss: "輪王ザルトラ", accessories: ["風雷のいんろう"], type: "その他", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["風耐性", "雷耐性"], tips: "属性耐性アクセ。火力で押し切りやすいが、属性耐性目的なら複数完成したい。", tags: ["召喚符", "属性"] },
+      { boss: "剣王ガルドリオン", accessories: ["氷闇の月飾り"], type: "その他", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["氷耐性", "闇耐性", "転び"], tips: "氷・闇耐性用。属性対策アクセとして必要な場面がある。", tags: ["召喚符", "属性"] },
+      { boss: "震王ジュノーガ", accessories: ["炎光の勾玉"], type: "その他", difficulty: "標準", level: "Lv90-140", roles: ["火力", "回復"], jobs: ["魔剣士", "バトルマスター", "僧侶", "旅芸人"], resists: ["炎耐性", "光耐性", "混乱"], tips: "炎・光耐性用。ジャンプ回避や範囲避けを意識。", tags: ["召喚符", "属性"] }
+    ];
+
+    const lineages = [
+      { title: "攻撃力首アクセ", note: "物理火力向け。古い世代を完成させて上位へ伝承する流れ。", stages: ["バトルチョーカー", "忠誠のチョーカー", "ラストチョーカー"] },
+      { title: "攻撃呪文首アクセ", note: "攻撃魔力・属性呪文向け。呪文職を使うなら優先度が高い系譜。", stages: ["魔王のネックレス", "智謀の首かざり"] },
+      { title: "生存首アクセ", note: "致死ダメージ時の生存を狙う定番系譜。伝承元として銀のロザリオも使う。", stages: ["銀のロザリオ", "金のロザリオ"] },
+      { title: "被ダメージ軽減首アクセ", note: "受けるダメージを減らす系譜。現環境でも用途がはっきりしている。", stages: ["竜のうろこ", "赤竜の首かざり"] },
+      { title: "最大HPアクセ", note: "HPを大きく伸ばす基本系譜。まず大地の竜玉から順に集めると迷いにくい。", stages: ["大地の竜玉", "大地の大竜玉", "紫竜の煌玉"] },
+      { title: "眼甲系顔アクセ", note: "敵撃破時テンション系。雑魚が多いコンテンツや周回で強い。", stages: ["海魔の眼甲", "機神の眼甲", "破壊神の眼甲"] },
+      { title: "行動短縮耳アクセ", note: "ターン消費しない・特技/呪文強化系の流れ。用途に応じて上位ピアスを選ぶ。", stages: ["アクセルギア", "死神のピアス", "マーシャルピアス", "レメディピアス"] },
+      { title: "開幕効果顔アクセ", note: "開戦時の必殺・バフ狙い。魔犬の仮面の伝承元として悪霊の仮面を使う。", stages: ["悪霊の仮面", "魔犬の仮面"] },
+      { title: "会心・ダメージ勲章", note: "証枠の火力系譜。魔人から夢幻魔王、冥雲魔神へ進める。", stages: ["魔人の勲章", "夢幻魔王の勲章", "冥雲魔神の勲章"] },
+      { title: "会心・攻撃勲章", note: "証枠の会心・攻撃寄り系譜。ガナン帝国や邪教司祭へつながる。", stages: ["忠義の勲章", "ガナン帝国の勲章", "邪教司祭の勲章"] },
+      { title: "重さ・HP腰アクセ", note: "パラディンや重さ調整で見る腰アクセ系譜。", stages: ["ハイドラベルト", "剛勇のベルト"] },
+      { title: "物理指輪", note: "攻撃時バイシオン系から前衛向けの軍神へ進む指アクセ系譜。", stages: ["幻界闘士のゆびわ", "武刃将軍のゆびわ", "軍神のゆびわ"] },
+      { title: "呪文・回復指輪", note: "早詠み系から呪文・回復職向けの神智へ進む指アクセ系譜。", stages: ["幻界導師のゆびわ", "魔導将軍のゆびわ", "神智のゆびわ"] }
+    ];
+
+    const lineageByAccessory = new Map();
+    lineages.forEach(lineage => {
+      lineage.stages.forEach(name => {
+        const list = lineageByAccessory.get(name) || [];
+        list.push(lineage);
+        lineageByAccessory.set(name, list);
+      });
+    });
+
+    const state = { query: "", type: "", difficulty: "", role: "" };
+    const cards = document.querySelector("#cards");
+    const search = document.querySelector("#search");
+    const typeSelect = document.querySelector("#type");
+    const difficultySelect = document.querySelector("#difficulty");
+    const roleChips = document.querySelector("#roleChips");
+    const resultCount = document.querySelector("#resultCount");
+    const dialog = document.querySelector("#detailDialog");
+    const detailHead = dialog.querySelector(".detail-head");
+    const detailTitle = document.querySelector("#detailTitle");
+    const detailBody = document.querySelector("#detailBody");
+    const dragState = { active: false, startX: 0, startY: 0, left: 0, top: 0 };
+
+    const types = [...new Set(bosses.map(item => item.type))].sort((a, b) => a.localeCompare(b, "ja"));
+    const roles = [...new Set(bosses.flatMap(item => item.roles))];
+    document.querySelector("#totalCount").textContent = bosses.length;
+
+    types.forEach(type => {
+      const option = document.createElement("option");
+      option.value = type;
+      option.textContent = type;
+      typeSelect.append(option);
+    });
+
+    roles.forEach(role => {
+      const button = document.createElement("button");
+      button.className = "chip";
+      button.type = "button";
+      button.textContent = role;
+      button.dataset.role = role;
+      button.addEventListener("click", () => {
+        state.role = state.role === role ? "" : role;
+        render();
+      });
+      roleChips.append(button);
+    });
+
+    search.addEventListener("input", event => {
+      state.query = event.target.value.trim().toLowerCase();
+      render();
+    });
+
+    typeSelect.addEventListener("change", event => {
+      state.type = event.target.value;
+      render();
+    });
+
+    difficultySelect.addEventListener("change", event => {
+      state.difficulty = event.target.value;
+      render();
+    });
+
+    document.querySelector("#reset").addEventListener("click", () => {
+      state.query = "";
+      state.type = "";
+      state.difficulty = "";
+      state.role = "";
+      search.value = "";
+      typeSelect.value = "";
+      difficultySelect.value = "";
+      render();
+    });
+
+    detailHead.addEventListener("pointerdown", event => {
+      if (!dialog.open) return;
+      const rect = dialog.getBoundingClientRect();
+      dragState.active = true;
+      dragState.startX = event.clientX;
+      dragState.startY = event.clientY;
+      dragState.left = rect.left;
+      dragState.top = rect.top;
+      dialog.style.margin = "0";
+      dialog.style.left = `${rect.left}px`;
+      dialog.style.top = `${rect.top}px`;
+      dialog.style.right = "auto";
+      dialog.style.bottom = "auto";
+      detailHead.setPointerCapture(event.pointerId);
+    });
+
+    detailHead.addEventListener("pointermove", event => {
+      if (!dragState.active) return;
+      const rect = dialog.getBoundingClientRect();
+      const maxLeft = Math.max(0, window.innerWidth - rect.width);
+      const maxTop = Math.max(0, window.innerHeight - rect.height);
+      const nextLeft = Math.min(maxLeft, Math.max(0, dragState.left + event.clientX - dragState.startX));
+      const nextTop = Math.min(maxTop, Math.max(0, dragState.top + event.clientY - dragState.startY));
+      dialog.style.left = `${nextLeft}px`;
+      dialog.style.top = `${nextTop}px`;
+    });
+
+    detailHead.addEventListener("pointerup", event => {
+      dragState.active = false;
+      detailHead.releasePointerCapture(event.pointerId);
+    });
+
+    detailHead.addEventListener("pointercancel", event => {
+      dragState.active = false;
+      detailHead.releasePointerCapture(event.pointerId);
+    });
+
+    function rankClass(difficulty) {
+      if (difficulty === "最新級") return "latest hard";
+      if (difficulty === "高め") return "hard";
+      if (difficulty === "初級") return "easy";
+      return "";
+    }
+
+    function searchableText(item) {
+      const lineageText = getLineages(item)
+        .flatMap(lineage => [lineage.title, lineage.note, ...lineage.stages])
+        .join(" ");
+      return [
+        item.boss,
+        item.type,
+        item.difficulty,
+        item.level,
+        ...item.accessories,
+        ...item.roles,
+        ...item.jobs,
+        ...item.resists,
+        ...item.tags,
+        lineageText
+      ].join(" ").toLowerCase();
+    }
+
+    function getLineages(item) {
+      const found = item.accessories.flatMap(name => lineageByAccessory.get(name) || []);
+      return [...new Set(found)];
+    }
+
+    function renderLineage(item, mode = "card") {
+      const found = getLineages(item);
+      if (!found.length) {
+        return mode === "detail"
+          ? `<section class="detail-box full"><h4>アクセサリ系譜</h4><p>このアプリ内では明確な上位・下位系譜なしとして扱っています。</p></section>`
+          : "";
+      }
+
+      const current = new Set(item.accessories);
+      const lineagesHtml = found.map(lineage => `
+        <div class="lineage-preview">
+          <p class="lineage-title">${lineage.title}</p>
+          <ol class="lineage-chain">
+            ${lineage.stages.map((stage, index) => `
+              <li class="lineage-step ${current.has(stage) ? "current" : ""}">${stage}</li>
+              ${index < lineage.stages.length - 1 ? `<li class="lineage-arrow" aria-hidden="true">→</li>` : ""}
+            `).join("")}
+          </ol>
+          ${mode === "detail" ? `<p class="note">${lineage.note}</p>` : ""}
+        </div>
+      `).join("");
+
+      if (mode === "detail") {
+        return `<section class="detail-box full"><h4>アクセサリ系譜</h4>${lineagesHtml}</section>`;
+      }
+      return lineagesHtml;
+    }
+
+    function filteredBosses() {
+      return bosses.filter(item => {
+        const matchesQuery = !state.query || searchableText(item).includes(state.query);
+        const matchesType = !state.type || item.type === state.type;
+        const matchesDifficulty = !state.difficulty || item.difficulty === state.difficulty;
+        const matchesRole = !state.role || item.roles.includes(state.role);
+        return matchesQuery && matchesType && matchesDifficulty && matchesRole;
+      });
+    }
+
+    function render() {
+      document.querySelectorAll(".chip").forEach(button => {
+        button.classList.toggle("active", button.dataset.role === state.role);
+      });
+
+      const list = filteredBosses();
+      resultCount.textContent = `${list.length}件`;
+      cards.replaceChildren();
+
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "条件に合うコインボスが見つかりません。キーワードや絞り込みをゆるめてください。";
+        cards.append(empty);
+        return;
+      }
+
+      list.forEach(item => {
+        const article = document.createElement("article");
+        article.className = "card";
+        article.innerHTML = `
+          <div>
+            <h2>${item.boss}</h2>
+            <div class="meta">
+              <span class="pill ${rankClass(item.difficulty)}">${item.difficulty}</span>
+              <span class="pill">${item.level}</span>
+              <span class="pill">${item.type}</span>
+            </div>
+          </div>
+          <div>
+            <dl class="accessory">
+              <dt>取得アクセサリ</dt>
+              <dd>${item.accessories.join(" / ")}</dd>
+            </dl>
+            ${renderLineage(item)}
+            <p class="note">${item.tips}</p>
+            <div class="roles">${item.roles.map(role => `<span class="pill">${role}</span>`).join("")}</div>
+          </div>
+          <button class="more" type="button">詳細を見る</button>
+        `;
+        article.querySelector(".more").addEventListener("click", () => openDetail(item));
+        cards.append(article);
+      });
+    }
+
+    function openDetail(item) {
+      dialog.style.margin = "";
+      dialog.style.left = "";
+      dialog.style.top = "";
+      dialog.style.right = "";
+      dialog.style.bottom = "";
+      detailTitle.textContent = item.boss;
+      detailBody.innerHTML = `
+        <div class="detail-grid">
+          <section class="detail-box">
+            <h4>アクセサリ</h4>
+            <p>${item.accessories.join(" / ")}（${item.type}）</p>
+          </section>
+          ${renderLineage(item, "detail")}
+          <section class="detail-box">
+            <h4>職業・レベル目安</h4>
+            <p>${item.level} / ${item.jobs.join("、")}</p>
+          </section>
+          <section class="detail-box">
+            <h4>耐性メモ</h4>
+            <ul>${item.resists.map(resist => `<li>${resist}</li>`).join("")}</ul>
+          </section>
+          <section class="detail-box">
+            <h4>立ち回りメモ</h4>
+            <p>${item.tips}</p>
+          </section>
+        </div>
+        <button class="close" type="button">閉じる</button>
+      `;
+      detailBody.querySelector(".close").addEventListener("click", () => dialog.close());
+      dialog.showModal();
+    }
+
+    render();
+  </script>
+</body>
+</html>
