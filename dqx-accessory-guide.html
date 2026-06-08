@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DQX アクセ理論値サーチ</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8f5;
+      --panel: #ffffff;
+      --ink: #1e2a2e;
+      --muted: #667478;
+      --line: #dbe3df;
+      --accent: #0d766e;
+      --accent-2: #b6413b;
+      --accent-3: #d89a22;
+      --chip: #edf4f1;
+      --shadow: 0 14px 40px rgba(28, 45, 45, .10);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(216,154,34,.16), transparent 32rem),
+        linear-gradient(135deg, #eef5f2 0%, #f8faf4 42%, #f2f6fa 100%);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 20px;
+      background: rgba(255,255,255,.82);
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      overflow: auto;
+    }
+
+    main {
+      padding: 26px clamp(18px, 4vw, 46px) 48px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .crest {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #cbdad4;
+      border-radius: 8px;
+      background: linear-gradient(145deg, #fff, #e5f0ec);
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin: 16px 0;
+    }
+
+    label {
+      color: #38474b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #c8d5d0;
+      border-radius: 8px;
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(13,118,110,.15);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid #c9d8d2;
+      background: var(--chip);
+      color: #253438;
+      border-radius: 999px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .reset {
+      width: 100%;
+      margin-top: 14px;
+      border: 1px solid #c8d5d0;
+      background: #fff;
+      border-radius: 8px;
+      padding: 11px 12px;
+      color: #314146;
+      cursor: pointer;
+    }
+
+    .hero {
+      min-height: 170px;
+      display: grid;
+      align-content: end;
+      gap: 14px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero h2 {
+      max-width: 980px;
+      margin: 0;
+      font-size: clamp(30px, 4.6vw, 58px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      max-width: 860px;
+      margin: 0;
+      color: #4f6065;
+      line-height: 1.85;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .stat {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 7px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.76);
+    }
+
+    .stat strong {
+      font-size: 20px;
+      color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      min-height: 360px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+      padding: 16px;
+      background: var(--panel);
+      border: 1px solid #d9e4df;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .card-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .name {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .slot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      height: 30px;
+      border-radius: 8px;
+      padding: 0 9px;
+      background: #233236;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: #f0f3f1;
+      color: #506064;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .priority {
+      background: rgba(182,65,59,.10);
+      color: #91332e;
+      font-weight: 700;
+    }
+
+    .body {
+      display: grid;
+      gap: 11px;
+      align-content: start;
+    }
+
+    .section-title {
+      margin: 0 0 5px;
+      color: #56676b;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .theory {
+      margin: 0;
+      padding: 10px 11px;
+      border-left: 4px solid var(--accent);
+      background: #eff7f5;
+      border-radius: 0 8px 8px 0;
+      line-height: 1.58;
+      font-weight: 700;
+    }
+
+    .get, .note, .lineage {
+      margin: 0;
+      color: #3c4d52;
+      line-height: 1.65;
+      font-size: 13px;
+    }
+
+    .lineage {
+      padding: 10px 11px;
+      border-radius: 8px;
+      background: #fbf8ef;
+      border: 1px solid #eee0bd;
+    }
+
+    .effects {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .effect {
+      border: 1px solid #d9e2df;
+      border-radius: 8px;
+      padding: 6px 8px;
+      background: #fff;
+      color: #405155;
+      font-size: 12px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--line);
+      padding-top: 11px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .empty {
+      display: none;
+      padding: 34px;
+      border: 1px dashed #bccbc6;
+      border-radius: 8px;
+      background: rgba(255,255,255,.72);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .sources {
+      margin-top: 30px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.7);
+      color: #516165;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .sources a { color: #0b6c66; }
+
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      main { padding-top: 20px; }
+      .hero { min-height: auto; }
+    }
+
+    @media (max-width: 460px) {
+      .grid { grid-template-columns: 1fr; }
+      .card { min-height: auto; }
+      .hero h2 { font-size: 32px; }
+      aside { padding: 20px 16px; }
+      main { padding-inline: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <div class="crest">X</div>
+        <div>
+          <h1>アクセ理論値サーチ</h1>
+          <p class="sub">DQX / 静的HTML / 2026-06-08確認</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="q">キーワード</label>
+        <input id="q" type="search" placeholder="例: 竜玉 HP アンドレアル 首">
+      </div>
+
+      <div class="field">
+        <label for="slot">部位</label>
+        <select id="slot"></select>
+      </div>
+
+      <div class="field">
+        <label for="lineage">系譜</label>
+        <select id="lineage"></select>
+      </div>
+
+      <div class="field">
+        <label>用途</label>
+        <div id="purposeChips" class="chips"></div>
+      </div>
+
+      <div class="field">
+        <label>優先度</label>
+        <div id="priorityChips" class="chips"></div>
+      </div>
+
+      <button id="reset" class="reset" type="button">条件をリセット</button>
+    </aside>
+
+    <main>
+      <section class="hero">
+        <h2>アクセ名を思い出せなくても、作る理論値にたどり着く。</h2>
+        <p>部位、系譜、用途から主要アクセを横断検索できます。おすすめ理論値は汎用性を優先した実戦向けメモです。職業・コンテンツで複数完成が必要なアクセはカード内に分けて書いています。</p>
+      </section>
+
+      <div class="toolbar">
+        <div class="stat"><strong id="count">0</strong><span>件</span></div>
+        <div class="stat"><strong id="mustCount">0</strong><span>優先</span></div>
+        <div class="stat"><strong id="lineageCount">0</strong><span>系譜</span></div>
+      </div>
+
+      <section id="grid" class="grid"></section>
+      <div id="empty" class="empty">該当するアクセがありません。キーワードや条件を少しゆるめてください。</div>
+
+      <section class="sources">
+        <strong>参照元</strong><br>
+        データの確認には、IKEドラクエ10攻略のアクセサリー仕様・合成仕様・個別詳細ページ、DQ-GHのアクセサリー一覧を参照しました。
+        <a href="https://dq10.i-k-e.net/item/acs/">アクセサリー</a> /
+        <a href="https://dq10.i-k-e.net/item/acs/compo">アクセサリー合成</a> /
+        <a href="https://dq-gh.com/dq10/data/accessory.html">DQ-GH アクセサリーデータ</a><br>
+        このページは個人用の整理表です。アップデート直後や新ボス追加後は、ゲーム内と攻略サイトで最終確認してください。
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const accessories = [
+      {
+        name: "魔犬の仮面", slot: "顔", lineage: "顔・必殺チャージ", priority: "高",
+        purposes: ["必殺", "汎用", "職別"],
+        theory: "職業別に複数作成。汎用は「必殺チャージ時 バイキルト / ピオラ2段階 / 魔力かくせい」など、使う職の自己強化を埋める。",
+        effects: ["必殺時バイキルト", "必殺時ピオラ2段階", "必殺時魔力かくせい", "必殺時聖女の守り"],
+        get: "魔犬レオパルド討伐報酬、破片10個で復元。",
+        chain: "悪霊の仮面 → 魔犬の仮面",
+        note: "テンプレは職で大きく変わる。物理・呪文・ヒーラー用を分けると迷いにくい。"
+      },
+      {
+        name: "機神の眼甲", slot: "顔", lineage: "顔・眼甲", priority: "高",
+        purposes: ["範囲狩り", "防衛軍", "万魔"],
+        theory: "「味方死亡時ためる +2%」を3枠。伝承は海魔の眼甲から「魔物を倒すとためる +5%」。",
+        effects: ["味方死亡時ためる+2%", "魔物を倒すとためる+5%"],
+        get: "Sキラーマシン討伐報酬、破片10個で復元。古いコインボスはロスター活用が楽。",
+        chain: "海魔の眼甲 → 機神の眼甲",
+        note: "雑魚が多い戦闘で強い。単体ボスでは魔犬の仮面と使い分け。"
+      },
+      {
+        name: "死神のピアス", slot: "顔", lineage: "顔・ターン消費", priority: "高",
+        purposes: ["汎用", "火力", "呪文"],
+        theory: "特技職は「特技のダメージ +5」を3枠。呪文職は「呪文のダメージ +5」を3枠。伝承はアクセルギアの「ターン消費しない +1.5%」。",
+        effects: ["特技ダメージ+5", "呪文ダメージ+5", "ターン消費しない+1.5%"],
+        get: "死神スライダーク討伐報酬、破片10個で復元。",
+        chain: "アクセルギア → 死神のピアス",
+        note: "まず特技用、呪文職をよく使うなら呪文用も作成。"
+      },
+      {
+        name: "ダークグラス", slot: "顔", lineage: "常闇・顔耐性", priority: "中",
+        purposes: ["耐性", "常闇"],
+        theory: "「幻惑ガード +10%」を3枠。基礎と合わせて顔だけで幻惑100%を狙う。",
+        effects: ["幻惑ガード+10%"],
+        get: "常闇の聖戦のレグナライト交換。",
+        chain: "単独",
+        note: "物理職の幻惑対策。装備錬金を空けたい時に便利。"
+      },
+      {
+        name: "ダークアイ", slot: "顔", lineage: "常闇・顔耐性", priority: "中",
+        purposes: ["耐性", "魅了"],
+        theory: "「魅了ガード +10%」を3枠。魅了耐性を盛る用途で作成。",
+        effects: ["魅了ガード+10%"],
+        get: "常闇の聖戦のレグナライト交換。",
+        chain: "単独",
+        note: "ぐるぐるメガネと用途が近いが、ステータスも欲しい時はこちら。"
+      },
+      {
+        name: "ネレウスマスク", slot: "顔", lineage: "常闇・顔耐性", priority: "低",
+        purposes: ["耐性", "毒"],
+        theory: "「毒ガード +10%」を3枠。毒100%調整用。",
+        effects: ["毒ガード+10%"],
+        get: "常闇の聖戦のレグナライト交換。",
+        chain: "単独",
+        note: "毒錬金が用意しづらい時の保険。"
+      },
+      {
+        name: "赤竜の首かざり", slot: "首", lineage: "首・被ダメ軽減", priority: "高",
+        purposes: ["耐久", "汎用", "エンド"],
+        theory: "基本は「最大HP」を3枠。耐久が足りる周回では攻撃寄せも候補。",
+        effects: ["最大HP", "攻撃力", "被ダメージ軽減系"],
+        get: "人食い火竜などVer7.2以降のコインボス報酬、破片10個で復元。",
+        chain: "竜のうろこ → 赤竜の首かざり",
+        note: "竜のうろこ系の上位。強敵で首枠に迷ったらまず確認したい。"
+      },
+      {
+        name: "竜のうろこ", slot: "首", lineage: "首・被ダメ軽減", priority: "高",
+        purposes: ["耐久", "汎用"],
+        theory: "「攻撃力 +5」を3枠、または「最大HP +3」を3枠。伝承先を見据えて両方あると便利。",
+        effects: ["攻撃力+5", "最大HP+3"],
+        get: "ドラゴン討伐報酬、破片10個で復元。",
+        chain: "竜のうろこ → 赤竜の首かざり",
+        note: "被ダメ軽減の基礎効果が強力。今もサブや途中段階で使いやすい。"
+      },
+      {
+        name: "幻界王の首かざり", slot: "首", lineage: "首・弱体耐性", priority: "中",
+        purposes: ["耐性", "エンド"],
+        theory: "「各弱体系耐性 +25%」を用途別に3枠。必要耐性に合わせて複数候補。",
+        effects: ["弱体系耐性+25%", "各属性低下耐性"],
+        get: "真・幻界諸侯討伐報酬、破片10個で復元。",
+        chain: "幻界王の首かざり",
+        note: "特定ボス用。汎用では赤竜、金ロザ、ラストチョーカーと競合。"
+      },
+      {
+        name: "金のロザリオ", slot: "首", lineage: "首・致死生存", priority: "高",
+        purposes: ["耐久", "ヒーラー", "エンド"],
+        theory: "「最大HP +3」を3枠。伝承は銀のロザリオから「致死ダメージ時生存 +5%」。攻撃型は「攻撃力 +5」も候補。",
+        effects: ["最大HP+3", "攻撃力+5", "致死時生存+5%"],
+        get: "牙王ゴースネル討伐報酬、破片10個で復元。",
+        chain: "銀のロザリオ → 金のロザリオ",
+        note: "生存優先の首枠。初心者からエンドまで長く使う。"
+      },
+      {
+        name: "ラストチョーカー", slot: "首", lineage: "首・攻撃力", priority: "高",
+        purposes: ["火力", "物理"],
+        theory: "「攻撃力 +10」を3枠。第二伝承で忠誠のチョーカー、第一伝承でバトルチョーカーの攻撃理論値を引き継ぐ。",
+        effects: ["攻撃力+10", "攻撃力伝承"],
+        get: "究極エビルプリースト討伐報酬、破片10個で復元。",
+        chain: "バトルチョーカー → 忠誠のチョーカー → ラストチョーカー",
+        note: "物理火力の首枠。耐久が必要なら赤竜や金ロザと選択。"
+      },
+      {
+        name: "智謀の首かざり", slot: "首", lineage: "首・属性呪文", priority: "中",
+        purposes: ["呪文", "属性"],
+        theory: "使う属性の「属性ダメージ +1%」を3枠。伝承は魔王のネックレスから攻魔理論値。",
+        effects: ["炎ダメージ+1%", "闇ダメージ+1%", "土ダメージ+1%", "攻魔伝承"],
+        get: "ゲルニック将軍討伐報酬、破片10個で復元。",
+        chain: "魔王のネックレス → 智謀の首かざり",
+        note: "魔法使い・竜術士など、使う属性ごとに作るタイプのアクセ。"
+      },
+      {
+        name: "軍神のゆびわ", slot: "指", lineage: "指・将軍", priority: "高",
+        purposes: ["火力", "物理", "汎用"],
+        theory: "物理職は「行動時バイシオン」系を3枠。伝承は武刃将軍のゆびわから延長または行動時バイシオン。",
+        effects: ["行動時バイシオン", "バイシオン時間延長"],
+        get: "結界の守護者たち討伐報酬、破片10個で復元。",
+        chain: "武刃将軍のゆびわ → 軍神のゆびわ",
+        note: "物理職の指枠の基準。耐性指輪が不要な戦闘で強い。"
+      },
+      {
+        name: "神智のゆびわ", slot: "指", lineage: "指・将軍", priority: "高",
+        purposes: ["呪文", "ヒーラー", "汎用"],
+        theory: "呪文職は「行動時早詠み」系を3枠。伝承は魔導将軍のゆびわから延長または行動時早詠み。",
+        effects: ["行動時早詠み", "早詠み時間延長"],
+        get: "結界の守護者たち討伐報酬、破片10個で復元。",
+        chain: "魔導将軍のゆびわ → 神智のゆびわ",
+        note: "魔法職・僧侶系の指枠。耐性指輪と競合するのでボス別に選択。"
+      },
+      {
+        name: "断罪のゆびわ", slot: "指", lineage: "指・咎人", priority: "中",
+        purposes: ["エンド", "火力", "属性"],
+        theory: "任意強化型。よく使う種族特攻、属性ダメージ、攻撃力または攻魔を組み合わせる。",
+        effects: ["種族ダメージ", "属性ダメージ", "攻撃力", "攻撃魔力"],
+        get: "深淵の咎人たちの素材で作成・強化。",
+        chain: "単独",
+        note: "特定ボス専用に寄せるほど強い。普段使いは将軍系が扱いやすい。"
+      },
+      {
+        name: "聖守護者のゆびわ", slot: "指", lineage: "指・聖守護者", priority: "中",
+        purposes: ["耐性", "エンド"],
+        theory: "必要な状態異常耐性を組み合わせる。混乱・呪い・眠り・封印など、ボス別に作成。",
+        effects: ["混乱ガード", "呪いガード", "眠りガード", "封印ガード"],
+        get: "聖守護者の闘戦記の羽根と交換。",
+        chain: "単独",
+        note: "耐性装備の自由度を上げる指輪。完成形はコンテンツ依存。"
+      },
+      {
+        name: "耐性ゆびわ各種", slot: "指", lineage: "指・基礎耐性", priority: "中",
+        purposes: ["耐性", "初心者"],
+        theory: "各耐性「+10%」を3枠。基礎50%と合わせて80%、宝珠や装備と合わせて100%へ。",
+        effects: ["眠り", "混乱", "マヒ", "封印", "呪い", "即死"],
+        get: "モンスタードロップ、転生モンスター、すごろく景品など。",
+        chain: "単独",
+        note: "序盤から長く使える。耐性不足の穴埋めに強い。"
+      },
+      {
+        name: "セトのアンク", slot: "胸", lineage: "ピラミッド・胸", priority: "高",
+        purposes: ["火力", "物理"],
+        theory: "「攻撃力 +3」を3枠。伝承はセトのブローチから攻撃力理論値。",
+        effects: ["攻撃力+3", "攻撃力伝承"],
+        get: "ピラミッド報酬、黄金のブローチの破片で復元。",
+        chain: "セトのブローチ → セトのアンク",
+        note: "物理職の胸アクセ筆頭。"
+      },
+      {
+        name: "アヌビスのアンク", slot: "胸", lineage: "ピラミッド・胸", priority: "高",
+        purposes: ["耐久", "汎用"],
+        theory: "「最大HP +4」を3枠。伝承はアヌビスのブローチからHP理論値。",
+        effects: ["最大HP+4", "HP伝承"],
+        get: "ピラミッド報酬、黄金のブローチの破片で復元。",
+        chain: "アヌビスのブローチ → アヌビスのアンク",
+        note: "耐久調整の定番。迷ったら先に作って損が少ない。"
+      },
+      {
+        name: "セルケトのアンク", slot: "胸", lineage: "ピラミッド・胸", priority: "中",
+        purposes: ["呪文"],
+        theory: "「攻撃魔力 +5」を3枠。伝承はセルケトのブローチから攻魔理論値。",
+        effects: ["攻撃魔力+5", "攻魔伝承"],
+        get: "ピラミッド報酬、黄金のブローチの破片で復元。",
+        chain: "セルケトのブローチ → セルケトのアンク",
+        note: "呪文アタッカー用。"
+      },
+      {
+        name: "イシスのアンク", slot: "胸", lineage: "ピラミッド・胸", priority: "中",
+        purposes: ["ヒーラー"],
+        theory: "「回復魔力 +5」を3枠。伝承はイシスのブローチから回魔理論値。",
+        effects: ["回復魔力+5", "回魔伝承"],
+        get: "ピラミッド報酬、黄金のブローチの破片で復元。",
+        chain: "イシスのブローチ → イシスのアンク",
+        note: "僧侶・賢者など回復職向け。"
+      },
+      {
+        name: "剛勇のベルト", slot: "腰", lineage: "腰・重さHP", priority: "中",
+        purposes: ["耐久", "パラディン"],
+        theory: "汎用は「最大HP +3」を3枠。パラディン用途は「重さ +4」を3枠。伝承はハイドラベルトからHPまたは重さ。",
+        effects: ["最大HP+3", "重さ+4", "開戦時効果"],
+        get: "ゴレオン将軍討伐報酬、破片10個で復元。",
+        chain: "ハイドラベルト → 剛勇のベルト",
+        note: "戦神・輝石ベルトと枠が競合。耐久や重さが欲しい時に。"
+      },
+      {
+        name: "戦神のベルト", slot: "腰", lineage: "腰・ランダム", priority: "高",
+        purposes: ["火力", "属性", "周回"],
+        theory: "武器種ダメージ、属性ダメージ、種族特攻が噛み合うものを保存。理論値は狙うより封印と保管ルールが大事。",
+        effects: ["武器ダメージ", "属性ダメージ", "種族特攻"],
+        get: "邪神の宮殿、天獄、ベルト倉庫・封印で厳選。",
+        chain: "単独",
+        note: "このアプリでは候補管理用。職・武器・属性が一致したものが当たり。"
+      },
+      {
+        name: "輝石のベルト", slot: "腰", lineage: "腰・ランダム", priority: "中",
+        purposes: ["火力", "移動", "レアドロ"],
+        theory: "属性・種族・移動速度・レアドロなど目的別に保管。理論値固定ではなく効果組み合わせで判断。",
+        effects: ["属性ダメージ", "移動速度", "レアドロップ", "開戦時効果"],
+        get: "王家の迷宮、心層の迷宮、便利ツール王家。",
+        chain: "単独",
+        note: "戦神では拾えない便利効果もある。"
+      },
+      {
+        name: "不思議のカード", slot: "札", lineage: "魔塔・札", priority: "高",
+        purposes: ["汎用", "火力", "耐久"],
+        theory: "物理は「最大HP / 攻撃力 / きようさ」。呪文は「最大HP / 攻撃魔力 / すばやさ」。ヒーラーは「最大HP / 回復魔力 / すばやさ」など。",
+        effects: ["最大HP", "攻撃力", "攻撃魔力", "回復魔力", "きようさ", "すばやさ"],
+        get: "不思議の魔塔で札強化素材を集めて任意強化。",
+        chain: "単独",
+        note: "任意型なので、職別カードを作る感覚で管理すると楽。"
+      },
+      {
+        name: "紫竜の煌玉", slot: "他", lineage: "竜玉・HP", priority: "高",
+        purposes: ["耐久", "汎用"],
+        theory: "「最大HP +5」を3枠。第一伝承・第二伝承も最大HPを引き継ぐ。",
+        effects: ["最大HP+5", "HP伝承"],
+        get: "アンドレアル討伐報酬、破片10個で復元。宝箱やアクセ箱から入手する機会もあり。",
+        chain: "大地の竜玉 → 大地の大竜玉 → 紫竜の煌玉",
+        note: "HPアクセの本命。全職で使うので優先度が高い。"
+      },
+      {
+        name: "炎光の勾玉", slot: "他", lineage: "属性おまもり", priority: "中",
+        purposes: ["耐性", "属性"],
+        theory: "「炎ダメージ減 +3%」または「光ダメージ減 +3%」を用途別に3枠。伝承は竜のおまもりから属性減。",
+        effects: ["炎ダメージ減+3%", "光ダメージ減+3%"],
+        get: "震王ジュノーガ討伐報酬、破片10個で復元。",
+        chain: "竜のおまもり → 炎光の勾玉",
+        note: "属性耐性100%調整や強敵対策で使う。"
+      },
+      {
+        name: "氷闇の月飾り", slot: "他", lineage: "属性おまもり", priority: "中",
+        purposes: ["耐性", "属性"],
+        theory: "「氷ダメージ減 +3%」または「闇ダメージ減 +3%」を用途別に3枠。伝承はロイヤルチャームから属性減。",
+        effects: ["氷ダメージ減+3%", "闇ダメージ減+3%"],
+        get: "剣王ガルドリオン討伐報酬、破片10個で復元。",
+        chain: "ロイヤルチャーム → 氷闇の月飾り",
+        note: "闇耐性を盛る場面が多め。"
+      },
+      {
+        name: "風雷のいんろう", slot: "他", lineage: "属性おまもり", priority: "中",
+        purposes: ["耐性", "属性"],
+        theory: "「風ダメージ減 +3%」または「雷ダメージ減 +3%」を用途別に3枠。伝承はビーナスのなみだから属性減。",
+        effects: ["風ダメージ減+3%", "雷ダメージ減+3%"],
+        get: "輪王ザルトラ討伐報酬、破片10個で復元。",
+        chain: "ビーナスのなみだ → 風雷のいんろう",
+        note: "雷耐性が必要な戦闘で特に出番が多い。"
+      },
+      {
+        name: "邪教司祭の勲章", slot: "他", lineage: "勲章・会心暴走", priority: "中",
+        purposes: ["火力", "会心", "呪文"],
+        theory: "会心・暴走率を活かす職用に作成。伝承はガナン帝国の勲章から会心暴走系またはHP。",
+        effects: ["会心率", "呪文暴走率", "HP伝承"],
+        get: "エビルプリースト討伐報酬、破片10個で復元。",
+        chain: "忠義の勲章 → ガナン帝国の勲章 → 邪教司祭の勲章",
+        note: "職と武器を選ぶ。汎用安定はHP伝承のガナン系も候補。"
+      },
+      {
+        name: "ガナン帝国の勲章", slot: "他", lineage: "勲章・会心暴走", priority: "中",
+        purposes: ["火力", "耐久"],
+        theory: "「会心と暴走ダメージ +5」を3枠、またはHP型。伝承は忠義の勲章から会心率かHP。",
+        effects: ["会心暴走ダメージ+5", "最大HP", "会心率伝承"],
+        get: "帝国三将軍討伐報酬、破片10個で復元。",
+        chain: "忠義の勲章 → ガナン帝国の勲章 → 邪教司祭の勲章",
+        note: "邪教司祭を作る前のつなぎにもなる。"
+      },
+      {
+        name: "夢幻魔王の勲章", slot: "他", lineage: "勲章・テンション", priority: "中",
+        purposes: ["火力", "万魔", "範囲狩り"],
+        theory: "「テンション時魔物にダメージ +30」を3枠。伝承は魔人の勲章からためる系。",
+        effects: ["テンション時ダメージ+30", "行動時ためる伝承"],
+        get: "ムドー討伐報酬、破片10個で復元。",
+        chain: "魔人の勲章 → 夢幻魔王の勲章",
+        note: "テンションを回す職・範囲狩り向け。"
+      },
+      {
+        name: "ハルファスの大紋章", slot: "紋章", lineage: "万魔・紋章", priority: "高",
+        purposes: ["火力", "物理"],
+        theory: "「攻撃力とすばやさ」または「攻撃力ときようさ」を3枠。伝承はハルファスの紋章から攻撃力系。",
+        effects: ["攻撃力+すばやさ", "攻撃力+きようさ"],
+        get: "万魔の塔、万魔の大箱、大紋章の破片で復元。",
+        chain: "ハルファスの紋章 → ハルファスの大紋章",
+        note: "物理職の紋章。サブステは職で選ぶ。"
+      },
+      {
+        name: "アガレスの大紋章", slot: "紋章", lineage: "万魔・紋章", priority: "中",
+        purposes: ["呪文"],
+        theory: "「攻撃魔力とすばやさ」または「攻撃魔力ときようさ」を3枠。伝承はアガレスの紋章から攻魔系。",
+        effects: ["攻撃魔力+すばやさ", "攻撃魔力+きようさ"],
+        get: "万魔の塔、万魔の大箱、大紋章の破片で復元。",
+        chain: "アガレスの紋章 → アガレスの大紋章",
+        note: "呪文アタッカー用。"
+      },
+      {
+        name: "ブエルの大紋章", slot: "紋章", lineage: "万魔・紋章", priority: "中",
+        purposes: ["ヒーラー"],
+        theory: "「回復魔力とすばやさ」を3枠。伝承はブエルの紋章から回魔系。",
+        effects: ["回復魔力+すばやさ", "回復魔力+きようさ"],
+        get: "万魔の塔、万魔の大箱、大紋章の破片で復元。",
+        chain: "ブエルの紋章 → ブエルの大紋章",
+        note: "回復職向け。"
+      },
+      {
+        name: "アモンの大紋章", slot: "紋章", lineage: "万魔・紋章", priority: "低",
+        purposes: ["パラディン", "重さ"],
+        theory: "「重さとすばやさ」などを3枠。伝承はアモンの紋章から重さ系。",
+        effects: ["重さ+すばやさ", "重さ+きようさ"],
+        get: "万魔の塔、万魔の大箱、大紋章の破片で復元。",
+        chain: "アモンの紋章 → アモンの大紋章",
+        note: "重さ調整が必要な時に。"
+      },
+      {
+        name: "絆のエンブレム極", slot: "証", lineage: "仲間モンスター", priority: "中",
+        purposes: ["仲間モンスター", "汎用"],
+        theory: "プレイヤー用補助は「絆時バイキルト / 聖女 / 早詠み / まもりのきり」など。仲間モンスターの役割で分ける。",
+        effects: ["絆時バイキルト", "絆時聖女", "絆時早詠み", "絆時まもりのきり"],
+        get: "モンスターバトルロード関連報酬・交換。",
+        chain: "絆のエンブレム → 絆のエンブレム改 → 絆のエンブレム極",
+        note: "Ver7.0で極が追加。サポート寄りの効果が便利。"
+      },
+      {
+        name: "職業の証", slot: "証", lineage: "職業専用", priority: "低",
+        purposes: ["職別", "初心者"],
+        theory: "合成対象ではなく職業固有効果を使い分ける。パッシブ的に強い証だけ押さえる。",
+        effects: ["職業固有効果"],
+        get: "各職業クエストなど。",
+        chain: "単独",
+        note: "夢幻魔王の勲章など他アクセと枠が競合する。"
+      },
+      {
+        name: "異界のなかまのこころ", slot: "心", lineage: "こころ・アスタルジア", priority: "中",
+        purposes: ["職別", "火力", "耐久"],
+        theory: "任意強化型。キャラクターごとの基礎効果と召喚効果で選ぶ。HP・攻撃・攻魔・回魔など職に合うものを育成。",
+        effects: ["最大HP", "攻撃力", "攻撃魔力", "回復魔力", "召喚効果"],
+        get: "異界アスタルジア、こころの結晶・欠片交換。旅立ちのこころはアクセサリー屋で購入可。",
+        chain: "旅立ちのこころ → 各なかまのこころ",
+        note: "Ver7系の新枠。装備枠を空けないため、未育成時は旅立ちのこころでも装備しておく。"
+      }
+    ];
+
+    const state = {
+      q: "",
+      slot: "すべて",
+      lineage: "すべて",
+      purpose: "すべて",
+      priority: "すべて"
+    };
+
+    const slots = ["すべて", ...new Set(accessories.map(a => a.slot))];
+    const lineages = ["すべて", ...new Set(accessories.map(a => a.lineage))];
+    const purposes = ["すべて", ...new Set(accessories.flatMap(a => a.purposes))];
+    const priorities = ["すべて", "高", "中", "低"];
+
+    const $ = id => document.getElementById(id);
+
+    function fillSelect(el, values) {
+      el.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    }
+
+    function makeChips(el, values, key) {
+      el.innerHTML = values.map(v => `<button class="chip${state[key] === v ? " active" : ""}" type="button" data-key="${key}" data-value="${escapeHtml(v)}">${escapeHtml(v)}</button>`).join("");
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function haystack(a) {
+      return [
+        a.name, a.slot, a.lineage, a.priority, a.theory, a.get, a.chain, a.note,
+        ...a.effects, ...a.purposes
+      ].join(" ").toLowerCase();
+    }
+
+    function filtered() {
+      const q = state.q.trim().toLowerCase();
+      return accessories.filter(a => {
+        if (q && !haystack(a).includes(q)) return false;
+        if (state.slot !== "すべて" && a.slot !== state.slot) return false;
+        if (state.lineage !== "すべて" && a.lineage !== state.lineage) return false;
+        if (state.purpose !== "すべて" && !a.purposes.includes(state.purpose)) return false;
+        if (state.priority !== "すべて" && a.priority !== state.priority) return false;
+        return true;
+      });
+    }
+
+    function render() {
+      makeChips($("purposeChips"), purposes, "purpose");
+      makeChips($("priorityChips"), priorities, "priority");
+
+      const items = filtered();
+      $("count").textContent = items.length;
+      $("mustCount").textContent = items.filter(a => a.priority === "高").length;
+      $("lineageCount").textContent = new Set(items.map(a => a.lineage)).size;
+      $("empty").style.display = items.length ? "none" : "block";
+
+      $("grid").innerHTML = items.map(a => `
+        <article class="card">
+          <div class="card-head">
+            <h3 class="name">${escapeHtml(a.name)}</h3>
+            <span class="slot">${escapeHtml(a.slot)}</span>
+          </div>
+          <div class="meta">
+            <span class="pill priority">優先度 ${escapeHtml(a.priority)}</span>
+            <span class="pill">${escapeHtml(a.lineage)}</span>
+            ${a.purposes.map(p => `<span class="pill">${escapeHtml(p)}</span>`).join("")}
+          </div>
+          <div class="body">
+            <div>
+              <p class="section-title">おすすめ理論値</p>
+              <p class="theory">${escapeHtml(a.theory)}</p>
+            </div>
+            <div>
+              <p class="section-title">系譜</p>
+              <p class="lineage">${escapeHtml(a.chain)}</p>
+            </div>
+            <div>
+              <p class="section-title">取得方法</p>
+              <p class="get">${escapeHtml(a.get)}</p>
+            </div>
+            <div>
+              <p class="section-title">主な効果</p>
+              <div class="effects">${a.effects.map(e => `<span class="effect">${escapeHtml(e)}</span>`).join("")}</div>
+            </div>
+            <p class="note">${escapeHtml(a.note)}</p>
+          </div>
+          <div class="footer">検索用: ${escapeHtml([a.slot, a.lineage, ...a.purposes].join(" / "))}</div>
+        </article>
+      `).join("");
+    }
+
+    fillSelect($("slot"), slots);
+    fillSelect($("lineage"), lineages);
+
+    $("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+    $("slot").addEventListener("change", e => { state.slot = e.target.value; render(); });
+    $("lineage").addEventListener("change", e => { state.lineage = e.target.value; render(); });
+    document.addEventListener("click", e => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      state[chip.dataset.key] = chip.dataset.value;
+      render();
+    });
+    $("reset").addEventListener("click", () => {
+      state.q = "";
+      state.slot = "すべて";
+      state.lineage = "すべて";
+      state.purpose = "すべて";
+      state.priority = "すべて";
+      $("q").value = "";
+      $("slot").value = "すべて";
+      $("lineage").value = "すべて";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
